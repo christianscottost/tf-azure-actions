@@ -16,6 +16,8 @@ jobs:
  terraform-plan:
    name: "Terraform Infrastructure Change Management"
    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
    defaults:
      run:
        shell: bash
@@ -50,6 +52,7 @@ jobs:
        env:
          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
        with:
+         github-token: ${{ secrets.GITHUB_TOKEN }}
          script: |
            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
 
