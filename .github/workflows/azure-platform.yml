@@ -16,8 +16,8 @@ jobs:
  terraform-plan:
    name: "Terraform Infrastructure Change Management"
    runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
+   permissions:
+     pull-requests: write
    defaults:
      run:
        shell: bash
