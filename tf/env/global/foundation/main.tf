@@ -7,29 +7,28 @@ terraform {
       version = "=2.98.0"
     }
     azuread = {
-      source = "hashicorp/azuread"
+      source  = "hashicorp/azuread"
       version = "=2.22.0"
     }
   }
-  /* backend "azurerm" {
-    resource_group_name  = "resourcegroup"
-    storage_account_name = "storageacctname"
-    container_name       = "container"
+  backend "azurerm" {
+    resource_group_name  = "rg-sandbox-eus"
+    storage_account_name = "stsandboxeus"
+    container_name       = "sandbox"
     key                  = "terraform.tfstate"
-
-  } */
+  }
 }
 
 # Configure the providers
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
-  tenant_id = var.tenant_id
+  tenant_id       = var.tenant_id
 }
 
 provider "azuread" {
   subscription_id = var.subscription_id
-  tenant_id = var.tenant_id
+  tenant_id       = var.tenant_id
 }
 
 # Environment state storage
@@ -58,7 +57,14 @@ resource "azurerm_storage_account" "init" {
   }
 }
 
-# Resources
+resource "azurerm_storage_container" "init" {
+  name                  = var.environment
+  storage_account_name  = azurerm_storage_account.init.name
+  container_access_type = "private"
+}
+
+
+/* # Resources
 
 resource "azurerm_resource_group" "example" {
   name     = "LoadBalancerRG"
@@ -81,4 +87,4 @@ resource "azurerm_lb" "example" {
     name                 = "PublicIPAddress"
     public_ip_address_id = azurerm_public_ip.example.id
   }
-}
+} */
