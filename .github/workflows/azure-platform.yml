@@ -7,18 +7,16 @@ on:
 env:
  # verbosity setting for Terraform logs
  TF_LOG: INFO
-
-permissions:
-      id-token: write
-      contents: read
-
+ 
 jobs:
  terraform-plan:
    name: "sandbox-infrastructure"
    runs-on: ubuntu-latest
    environment: sandbox
    permissions:
-     pull-requests: write
+    pull-requests: write
+    id-token: write
+    contents: read
    defaults:
      run:
        shell: bash
