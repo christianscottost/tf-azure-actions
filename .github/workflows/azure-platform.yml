@@ -8,14 +8,15 @@ env:
  # verbosity setting for Terraform logs
  TF_LOG: INFO
 
- # Credentials for deployment to Azure
- ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
- ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+permissions:
+      id-token: write
+      contents: read
 
 jobs:
  terraform-plan:
-   name: "Terraform Infrastructure Change Management"
+   name: "sandbox-infrastructure"
    runs-on: ubuntu-latest
+   environment: sandbox
    permissions:
      pull-requests: write
    defaults:
@@ -25,77 +26,83 @@ jobs:
        working-directory: ./tf/env/global/foundation/
 
    steps:
-     - name: Checkout the repository to the runner
-       uses: actions/checkout@v2
+    - name: 'Az CLI login'
+      uses: azure/login@v1
+      with:
+          client-id: ${{ secrets.ARM_CLIENT_ID }}
+          tenant-id: ${{ secrets.ARM_TENANT_ID }}
+          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+    - name: Checkout the repository to the runner
+      uses: actions/checkout@v2
 
-     - name: Setup Terraform with specified version on the runner
-       uses: hashicorp/setup-terraform@v2
-       with:
-         terraform_version: 1.3.9
-     - name: Terraform init
-       id: init
-       run: terraform init
-     - name: Terraform format
-       id: fmt
-       run: terraform fmt -check
-     - name: Terraform validate
-       id: validate
-       run: terraform validate
-     - name: Terraform plan
-       id: plan
-       if: github.event_name == 'pull_request'
-       run: terraform plan -no-color -input=false
-       continue-on-error: true
-    
-     - uses: actions/github-script@v6
-       if: github.event_name == 'pull_request'
-       env:
-         PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-       with:
-         github-token: ${{ secrets.GITHUB_TOKEN }}
-         script: |
-           const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+    - name: Setup Terraform with specified version on the runner
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.3.9
+    - name: Terraform init
+      id: init
+      run: terraform init
+    - name: Terraform format
+      id: fmt
+      run: terraform fmt -check
+    - name: Terraform validate
+      id: validate
+      run: terraform validate
+    - name: Terraform plan
+      id: plan
+      if: github.event_name == 'pull_request'
+      run: terraform plan -no-color -input=false
+      continue-on-error: true
+  
+    - uses: actions/github-script@v6
+      if: github.event_name == 'pull_request'
+      env:
+        PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
 
-           #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+          #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
 
-           #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+          #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
 
-           #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+          #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
 
-           <details><summary>Show Plan</summary>
+          <details><summary>Show Plan</summary>
 
- 
 
-           \`\`\`\n
 
-           ${process.env.PLAN}
+          \`\`\`\n
 
-           \`\`\`
+          ${process.env.PLAN}
 
- 
+          \`\`\`
 
-           </details>
 
-           *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
- 
+          </details>
 
-           github.rest.issues.createComment({
+          *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
-             issue_number: context.issue.number,
 
-             owner: context.repo.owner,
 
-             repo: context.repo.repo,
+          github.rest.issues.createComment({
 
-             body: output
+            issue_number: context.issue.number,
 
-           })
+            owner: context.repo.owner,
 
-     - name: Terraform Plan Status
-       if: steps.plan.outcome == 'failure'
-       run: exit 1
+            repo: context.repo.repo,
 
-     - name: Terraform Apply
-       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-       run: terraform apply -auto-approve -input=false
+            body: output
+
+          })
+
+    - name: Terraform Plan Status
+      if: steps.plan.outcome == 'failure'
+      run: exit 1
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve -input=false
