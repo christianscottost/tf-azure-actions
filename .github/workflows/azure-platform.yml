@@ -13,6 +13,11 @@ jobs:
    name: "sandbox-infrastructure"
    runs-on: ubuntu-latest
    environment: sandbox
+   env:
+    ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+    ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+    ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
    permissions:
     pull-requests: write
     id-token: write
@@ -24,12 +29,12 @@ jobs:
        working-directory: ./tf/env/global/foundation/
 
    steps:
-    - name: 'Az CLI login'
-      uses: azure/login@v1
-      with:
-          client-id: ${{ secrets.ARM_CLIENT_ID }}
-          tenant-id: ${{ secrets.ARM_TENANT_ID }}
-          subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+    # - name: 'Az CLI login'
+    #   uses: azure/login@v1
+    #   with:
+    #       client-id: ${{ secrets.ARM_CLIENT_ID }}
+    #       tenant-id: ${{ secrets.ARM_TENANT_ID }}
+    #       subscription-id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
     - name: Checkout the repository to the runner
       uses: actions/checkout@v2
 
